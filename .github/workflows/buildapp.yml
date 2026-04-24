@@ -133,12 +133,12 @@ jobs:
           mv YouTube.ipa YouTube.zip
           unzip -q YouTube.zip
           
-          # ท่าไม้ตายที่ 1: ลบ App Extensions ทุกจุดในแอป ไม่ให้หลงเหลือ
-          find Payload/YouTube.app -name "*.appex" -type d -exec rm -rf {} \;
-          rm -rf Payload/YouTube.app/PlugIns
-          rm -rf Payload/YouTube.app/Extensions
-          rm -rf Payload/YouTube.app/Watch
-          rm -rf Payload/YouTube.app/com.apple.WatchPlaceholder
+          # แก้ไขบั๊ก find ให้หาให้เสร็จก่อนแล้วค่อยลบ (ลด Error ตอนค้นหา) และใส่ || true กันเหนียว
+          find Payload/YouTube.app -name "*.appex" -type d -print0 | xargs -0 rm -rf || true
+          rm -rf Payload/YouTube.app/PlugIns || true
+          rm -rf Payload/YouTube.app/Extensions || true
+          rm -rf Payload/YouTube.app/Watch || true
+          rm -rf Payload/YouTube.app/com.apple.WatchPlaceholder || true
           
           youtube_version=$(defaults read "$(pwd)/Payload/YouTube.app/Info" CFBundleVersion)
           echo "==> YouTube v$youtube_version downloaded!"
