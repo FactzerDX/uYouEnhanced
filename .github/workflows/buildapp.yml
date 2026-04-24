@@ -133,12 +133,11 @@ jobs:
           mv YouTube.ipa YouTube.zip
           unzip -q YouTube.zip
           
-          # แก้ไขบั๊ก find ให้หาให้เสร็จก่อนแล้วค่อยลบ (ลด Error ตอนค้นหา) และใส่ || true กันเหนียว
-          find Payload/YouTube.app -name "*.appex" -type d -print0 | xargs -0 rm -rf || true
-          rm -rf Payload/YouTube.app/PlugIns || true
-          rm -rf Payload/YouTube.app/Extensions || true
-          rm -rf Payload/YouTube.app/Watch || true
-          rm -rf Payload/YouTube.app/com.apple.WatchPlaceholder || true
+          # ลบโฟลเดอร์เจ้าปัญหาตรงๆ ปลอดภัย ไม่เกิด Error กวนใจแน่นอน
+          rm -rf Payload/YouTube.app/PlugIns
+          rm -rf Payload/YouTube.app/Extensions
+          rm -rf Payload/YouTube.app/Watch
+          rm -rf Payload/YouTube.app/com.apple.WatchPlaceholder
           
           youtube_version=$(defaults read "$(pwd)/Payload/YouTube.app/Info" CFBundleVersion)
           echo "==> YouTube v$youtube_version downloaded!"
@@ -157,7 +156,7 @@ jobs:
           sed -i '' "29s#.*#DISPLAY_NAME = ${{ env.APP_NAME }}#g" Makefile                        # Modify the app name
           sed -i '' "1s#.*#export TARGET = iphone:clang:${{ inputs.sdk_version }}:14.0#g" Makefile # Modify the SDK version
           
-          # ท่าไม้ตายที่ 2: สั่ง REMOVE_EXTENSIONS=1 กำกับไว้ตอนแพ็กเกจ
+          # สั่ง REMOVE_EXTENSIONS=1 กำกับไว้ตอนแพ็กเกจ
           make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/YouTube.app FINALPACKAGE=1 REMOVE_EXTENSIONS=1 REMOVE_WATCHAPP=1
           
           echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
