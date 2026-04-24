@@ -3,7 +3,7 @@
 
 name: Build and Release uYouEnhanced
 
-# บังคับใช้ Node.js 24 เพื่อแก้ Warning
+# บังคับใช้ Node.js 24 เพื่อแก้ Warning ของ GitHub Actions
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -11,17 +11,17 @@ on:
   workflow_dispatch:
     inputs:
       sdk_version:
-        description: "iOS SDK Version"
+        description: "iOS SDK Version (ค่าเริ่มต้น 17.5 ใช้งานได้ดีกับแอปเวอร์ชันใหม่ๆ)"
         default: "17.5"
         required: true
         type: string
       uyou_version:
-        description: "uYou Version"
+        description: "uYou Version (ใส่เวอร์ชัน uYou ที่รองรับ YT 21.16.2 เช่น 3.0.4)"
         default: "3.0.4"
         required: true
         type: string
       decrypted_youtube_url:
-        description: "Direct URL of the decrypted YouTube IPA"
+        description: "Direct URL of the decrypted YouTube IPA (ใส่ลิงก์ตรงของ YT 21.16.2 ที่นี่)"
         default: ""
         required: true
         type: string
@@ -133,12 +133,13 @@ jobs:
           mv YouTube.ipa YouTube.zip
           unzip -q YouTube.zip
           
-          # ลบโฟลเดอร์เจ้าปัญหาตรงๆ ปลอดภัย ไม่เกิด Error กวนใจแน่นอน
+          # ลบโฟลเดอร์ส่วนขยายทิ้ง ป้องกันปัญหา Error: Mismatched bundle IDs ตอนติดตั้ง
           rm -rf Payload/YouTube.app/PlugIns
           rm -rf Payload/YouTube.app/Extensions
           rm -rf Payload/YouTube.app/Watch
           rm -rf Payload/YouTube.app/com.apple.WatchPlaceholder
           
+          # โค้ดส่วนนี้จะอ่านเลขเวอร์ชัน 21.16.2 ออกมาจากไฟล์ IPA ที่คุณให้มาอัตโนมัติ
           youtube_version=$(defaults read "$(pwd)/Payload/YouTube.app/Info" CFBundleVersion)
           echo "==> YouTube v$youtube_version downloaded!"
           sed -i '' "17s#.*#YOUTUBE_VERSION = ${youtube_version}#g" Makefile
@@ -156,7 +157,7 @@ jobs:
           sed -i '' "29s#.*#DISPLAY_NAME = ${{ env.APP_NAME }}#g" Makefile                        # Modify the app name
           sed -i '' "1s#.*#export TARGET = iphone:clang:${{ inputs.sdk_version }}:14.0#g" Makefile # Modify the SDK version
           
-          # สั่ง REMOVE_EXTENSIONS=1 กำกับไว้ตอนแพ็กเกจ
+          # สั่งแพ็กเกจเป็นไฟล์ .ipa พร้อมสั่งไม่รวมส่วนขยาย
           make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/YouTube.app FINALPACKAGE=1 REMOVE_EXTENSIONS=1 REMOVE_WATCHAPP=1
           
           echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
