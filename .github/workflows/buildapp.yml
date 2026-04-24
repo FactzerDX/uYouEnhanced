@@ -3,7 +3,7 @@
 
 name: Build and Release uYouEnhanced
 
-# เพิ่มส่วนนี้เพื่อบังคับให้ Actions ทั้งหมดทำงานบน Node.js 24 เพื่อแก้ Warning
+# บังคับใช้ Node.js 24 เพื่อแก้ Warning
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -86,7 +86,7 @@ jobs:
       
       - name: SDK Caching
         id: SDK
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v4
         env:
           cache-name: iOS-${{ inputs.sdk_version }}-SDK
         with:
@@ -133,8 +133,12 @@ jobs:
           mv YouTube.ipa YouTube.zip
           unzip -q YouTube.zip
           
-          # ลบ App Extensions ทิ้งเพื่อแก้ปัญหา Bundle ID ไม่ตรงกันตอนติดตั้ง
+          # ท่าไม้ตายที่ 1: ลบ App Extensions ทุกจุดในแอป ไม่ให้หลงเหลือ
+          find Payload/YouTube.app -name "*.appex" -type d -exec rm -rf {} \;
           rm -rf Payload/YouTube.app/PlugIns
+          rm -rf Payload/YouTube.app/Extensions
+          rm -rf Payload/YouTube.app/Watch
+          rm -rf Payload/YouTube.app/com.apple.WatchPlaceholder
           
           youtube_version=$(defaults read "$(pwd)/Payload/YouTube.app/Info" CFBundleVersion)
           echo "==> YouTube v$youtube_version downloaded!"
@@ -152,7 +156,10 @@ jobs:
           sed -i '' "30s#.*#BUNDLE_ID = ${{ env.BUNDLE_ID }}#g" Makefile                          # Modify the bundle ID
           sed -i '' "29s#.*#DISPLAY_NAME = ${{ env.APP_NAME }}#g" Makefile                        # Modify the app name
           sed -i '' "1s#.*#export TARGET = iphone:clang:${{ inputs.sdk_version }}:14.0#g" Makefile # Modify the SDK version
-          make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/YouTube.app FINALPACKAGE=1
+          
+          # ท่าไม้ตายที่ 2: สั่ง REMOVE_EXTENSIONS=1 กำกับไว้ตอนแพ็กเกจ
+          make package THEOS_PACKAGE_SCHEME=rootless IPA=Payload/YouTube.app FINALPACKAGE=1 REMOVE_EXTENSIONS=1 REMOVE_WATCHAPP=1
+          
           echo "package=$(ls -t packages | head -n1)" >>$GITHUB_OUTPUT
           echo -e "==> \033[1mSHASUM256: $(shasum -a 256 packages/*.ipa | cut -f1 -d' ')\033[0m"
           echo -e "==> \033[1mBundle ID: ${{ env.BUNDLE_ID }}\033[0m"
